@@ -1,0 +1,41 @@
+version: "3"
+
+services:
+
+  scylla-node1:
+    image: scylladb/scylla:4.1.0
+    restart: always
+    command: --seeds=scylla-node1,scylla-node2 --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0 
+    volumes:
+      - "./configurations/Node_1/scylla.yaml:/etc/scylla/scylla.yaml"
+      - "./configurations/Datacenter1_properties/cassandra-rackdc.properties.dc1:/etc/scylla/cassandra-rackdc.properties"
+    networks:
+      scylla_network :
+      
+
+  scylla-node2:
+    image: scylladb/scylla:4.1.0
+    restart: always
+    command: --seeds=scylla-node1,scylla-node2 --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0 
+    volumes:
+      - "./configurations/Node_2/scylla.yaml:/etc/scylla/scylla.yaml"
+      - "./configurations/Datacenter1_properties/cassandra-rackdc.properties.dc1:/etc/scylla/cassandra-rackdc.properties"
+    networks:
+      scylla_network:
+     
+
+  scylla-node3:
+    image: scylladb/scylla:4.1.0
+    restart: always
+    command: --seeds=scylla-node1,scylla-node2 --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0
+    volumes:
+      - "./configurations/Node_3/scylla.yaml:/etc/scylla/scylla.yaml"
+      - "./configurations/Datacenter1_properties/cassandra-rackdc.properties.dc1:/etc/scylla/cassandra-rackdc.properties"
+    networks:
+      scylla_network:
+    
+# Manually configuring network for the nodes using not assigning an existing one.
+# Below are the configuratios to be done.
+networks:
+  scylla_network:
+    driver: bridge
