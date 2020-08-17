@@ -1,0 +1,104 @@
+version: "3"
+
+services:
+
+  scylla-node1:
+    build: 
+      # docker file is used to create a ScyllaDB image with the Scylla Manager Agent patched on top of it. 
+      # The reason for this is that the Agent needs access to ScyllaDB's data files in order to create backups.
+      # Context is assigned with the path to a directory containing a Dockerfile,or a url to a git repository.
+      context: ./configurations 
+    image: scylladb/scylla-with-agent
+    restart: always
+    command: --seeds=18.10.0.21,18.10.0.22 --listen-address=18.10.0.21 --rpc-address=18.10.0.21 --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0 
+    volumes:
+      - "./configurations/Node_1/scylla-staticIP.yaml:/etc/scylla/scylla.yaml"
+      - "./configurations/Datacenter1_properties/cassandra-rackdc.properties.dc1:/etc/scylla/cassandra-rackdc.properties"
+    networks:
+      scylla_network:
+        ipv4_address: 18.10.0.21       
+      
+  scylla-node2:
+    build: 
+      context: ./configurations 
+    image: scylladb/scylla-with-agent
+    restart: always
+    command: --seeds=18.10.0.21,18.10.0.22 --listen-address=18.10.0.22 --rpc-address=18.10.0.22 --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0 
+    volumes:
+      - "./configurations/Node_2/scylla-staticIP.yaml:/etc/scylla/scylla.yaml"
+      - "./configurations/Datacenter1_properties/cassandra-rackdc.properties.dc1:/etc/scylla/cassandra-rackdc.properties"
+    networks:
+      scylla_network:
+        ipv4_address: 18.10.0.22
+
+  scylla-node3:
+    build: 
+      context: ./configurations 
+    image: scylladb/scylla-with-agent
+    restart: always
+    command: --seeds=18.10.0.21,18.10.0.22 --listen-address=18.10.0.23 --rpc-address=18.10.0.23 --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0 
+    volumes:
+      - "./configurations/Node_3/scylla-staticIP.yaml:/etc/scylla/scylla.yaml"
+      - "./configurations/Datacenter1_properties/cassandra-rackdc.properties.dc1:/etc/scylla/cassandra-rackdc.properties"
+    networks:
+      scylla_network:
+        ipv4_address: 18.10.0.23
+        
+  scylla-node4:
+    build: 
+      context: ./configurations 
+    image: scylladb/scylla-with-agent
+    restart: always
+    command: --seeds=18.10.0.21,18.10.0.22 --listen-address=18.10.0.24 --rpc-address=18.10.0.24 --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0 
+    volumes:
+      - "./configurations/Node_4/scylla-staticIP.yaml:/etc/scylla/scylla.yaml"
+      - "./configurations/Datacenter1_properties/cassandra-rackdc.properties.dc1:/etc/scylla/cassandra-rackdc.properties"
+    networks:
+      scylla_network:
+        ipv4_address: 18.10.0.24     
+   
+  scylla-manager:
+    image: scylladb/scylla-manager:latest
+    restart: always
+    networks:
+      scylla_network:
+    depends_on: 
+      - scylla-manager-db
+
+  scylla-manager-db:
+    image: scylladb/scylla:latest
+    restart: always
+    volumes:
+        - scylla_manager_db_data:/var/lib/scylla
+    networks:
+      scylla_network:
+    command: --smp 1 --memory 1G    
+
+  minio:
+    image: minio/minio:latest
+    restart: always
+    volumes:
+      - minio_data:/data
+    networks:
+      scylla_network:
+    ports:
+      - "9001:9000"
+    environment:
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+    command: server /data    
+    
+# Manually configuring network for the nodes using not assigning an existing one.
+# Below are the configuratios to be done.
+networks:
+  scylla_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config: 
+        - subnet: 18.10.0.0/16 
+
+volumes:
+  minio_data:
+  scylla_manager_db_data:
+        
